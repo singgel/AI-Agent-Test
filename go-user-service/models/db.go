@@ -37,5 +37,5 @@ func InitDB(cfg *config.DatabaseConfig) error {
 }
 
 func autoMigrate() error {
-	return DB.AutoMigrate(&User{})
+	return DB.AutoMigrate(&User{}, &Order{})
 }

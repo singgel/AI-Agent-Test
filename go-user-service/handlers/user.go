@@ -63,22 +63,34 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// 记录登录请求
+	utils.Logger.Info("用户尝试登录", "username", req.Username)
+
 	var user models.User
 	if err := models.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
+		// 记录登录失败 - 用户名不存在
+		utils.Logger.Warn("登录失败：用户名不存在", "username", req.Username)
 		utils.Error(c, 1003, "Invalid username or password")
 		return
 	}
 
 	if !utils.CheckPassword(req.Password, user.Password) {
+		// 记录登录失败 - 密码错误
+		utils.Logger.Warn("登录失败：密码错误", "username", req.Username, "userID", user.ID)
 		utils.Error(c, 1003, "Invalid username or password")
 		return
 	}
 
 	token, err := h.jwtUtil.GenerateToken(user.ID, user.Username)
 	if err != nil {
+		// 记录Token生成失败
+		utils.Logger.Error("Token生成失败", "username", req.Username, "userID", user.ID, "error", err.Error())
 		utils.InternalServerError(c, "Failed to generate token")
 		return
 	}
+
+	// 记录登录成功
+	utils.Logger.Info("用户登录成功", "username", user.Username, "userID", user.ID)
 
 	response := models.LoginResponse{
 		Token: token,
